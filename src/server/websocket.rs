@@ -1,21 +1,19 @@
 use std::error::Error;
-use std::fs::read_to_string;
 use std::future::Future;
 use std::thread;
 use std::time::Duration;
 
-use log::{error, info};
+use log::{debug, error, info};
 use tokio::net::{TcpListener, TcpStream};
-use tokio::sync::mpsc::Sender;
-use tokio::sync::{broadcast, mpsc, oneshot};
+use tokio::sync::{broadcast, mpsc};
 
-use crate::server::manager::ServerManager;
 use crate::server::shutdown::Shutdown;
 use crate::server::ServerEvents;
+use crate::server::ServerEvents::Connected;
 
 pub struct Listener<'a> {
     listener: &'a TcpListener,
-    manager_chan: mpsc::Sender<ServerEvents>,
+    manager_chan: &'a mpsc::Sender<ServerEvents>,
     notify_shutdown: broadcast::Sender<()>,
 }
 
@@ -61,7 +59,9 @@ impl Handler {
                     client_id: "porra".to_string(),
                     addr: self.socket.peer_addr().unwrap().to_string(),
                 })
-                .unwrap_or_else(|msg| {});
+                .unwrap_or_else(|_err| {
+                    error!("cannot send msg");
+                });
         }
         Ok(())
     }
@@ -84,10 +84,14 @@ impl<'a> Server {
         let (notify_shutdown, _) = broadcast::channel(1);
         let mut server = Listener {
             listener: &self.listener,
-            manager_chan: self.manager_chan,
+            manager_chan: &self.manager_chan,
             notify_shutdown,
         };
-        // tokio::spawn(server.run());
+
+        self.manager_chan.try_send(Connected).unwrap_or_else(|err| {
+            debug!("cannot send message: {}", err);
+        });
+
         tokio::select! {
             res = server.run() => {
                 if let Err(err) = res {

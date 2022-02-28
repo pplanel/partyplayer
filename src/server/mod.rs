@@ -1,9 +1,7 @@
-use std::borrow::Borrow;
 use std::error::Error;
 
-use log::info;
 use tokio::net::TcpListener;
-use tokio::sync::{mpsc, oneshot};
+use tokio::sync::mpsc;
 
 use manager::ServerManager;
 
@@ -22,27 +20,25 @@ pub enum ServerEvents {
 pub struct Server {
     manager: ServerManager,
     wss_server: websocket::Server,
-    rest_server: rest::RestServer,
+    _rest_server: rest::RestServer,
 }
 
 impl Server {
     pub fn new(listener: TcpListener) -> Self {
         let (server_sender, server_recv) = mpsc::channel::<ServerEvents>(32);
 
-        let (kill_sender, kill_recv) = oneshot::channel::<ServerEvents>();
-
-        let manager = ServerManager::new(server_recv, kill_sender);
+        let manager = ServerManager::new(server_recv);
         let websocker_server = websocket::Server::new(listener, server_sender);
 
         Server {
             manager,
             wss_server: websocker_server,
-            rest_server: rest::RestServer {},
+            _rest_server: rest::RestServer {},
         }
     }
 
     pub async fn run(self) -> Result<(), Box<dyn Error>> {
-        let (manager, wss_server) = tokio::join!(
+        let (_manager, _wss_server) = tokio::join!(
             self.wss_server.run(tokio::signal::ctrl_c()),
             self.manager.run(),
         );
