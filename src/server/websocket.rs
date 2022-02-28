@@ -9,7 +9,7 @@ use tokio::sync::{broadcast, mpsc};
 
 use crate::server::shutdown::Shutdown;
 use crate::server::ServerEvents;
-use crate::server::ServerEvents::Connected;
+use crate::server::ServerEvents::WebsocketConnected;
 
 pub struct Listener<'a> {
     listener: &'a TcpListener,
@@ -88,9 +88,11 @@ impl<'a> Server {
             notify_shutdown,
         };
 
-        self.manager_chan.try_send(Connected).unwrap_or_else(|err| {
-            debug!("cannot send message: {}", err);
-        });
+        self.manager_chan
+            .try_send(WebsocketConnected)
+            .unwrap_or_else(|err| {
+                debug!("cannot send message: {}", err);
+            });
 
         tokio::select! {
             res = server.run() => {

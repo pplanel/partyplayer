@@ -11,6 +11,7 @@ tokio-stream = "0.1.8"
 tokio-tungstenite = "*"
 env_logger = "0.9.0"
 log = "0.4.14"
+warp = "0.3.2"
 
 [[bin]]
 name = 'partyplayer'

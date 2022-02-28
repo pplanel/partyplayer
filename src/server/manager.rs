@@ -29,6 +29,8 @@ impl ServerManager {
                     )
                 }
                 ServerEvents::Shutdown => {}
+                ServerEvents::WebsocketConnected => info!("ServerManager::WebsocketConnected"),
+                ServerEvents::RestConnected => info!("ServerManager::RestConnected"),
             }
         }
         Ok(())
