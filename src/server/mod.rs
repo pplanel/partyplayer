@@ -10,7 +10,6 @@ mod rest;
 mod shutdown;
 mod websocket;
 
-#[allow(dead_code)]
 pub enum ServerEvents {
     Connected,
     Onboard { client_id: String, addr: String },
